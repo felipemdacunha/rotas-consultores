@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f3b34">
+<title>Visitas em Campo</title>
+
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Visitas">
+
+<link rel="stylesheet" href="./style.css">
+
+<!-- jsPDF + AutoTable (CDN). Versões fixas de propósito: 'latest' quebra sem aviso. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js" defer></script>
+</head>
+<body>
+
+<!-- Barra de status de conexão / fila pendente -->
+<div id="statusBar" class="statusbar" role="status" aria-live="polite"></div>
+
+<header class="topo">
+  <div class="topo-linha">
+    <h1>Visitas em Campo</h1>
+    <button id="btnSair" class="btn-texto" hidden>Trocar consultor</button>
+  </div>
+  <nav class="abas" id="abas" hidden>
+    <button class="aba ativa" data-tela="consultor" aria-current="page">Consultor</button>
+    <button class="aba" data-tela="gerente">Gerente</button>
+  </nav>
+</header>
+
+<main>
+
+<!-- ============ TELA 1 · LOGIN ============ -->
+<section id="telaLogin" class="tela ativa">
+  <div class="cartao cartao-login">
+    <h2>Quem está em campo?</h2>
+    <p class="ajuda">Seu nome fica salvo neste celular e entra automaticamente em cada visita.</p>
+    <form id="formLogin" novalidate>
+      <label for="loginNome">Nome do consultor</label>
+      <input type="text" id="loginNome" name="nome" autocomplete="name"
+             placeholder="Ex.: Felipe da Cunha" required>
+      <p class="erro" id="erroLogin" hidden></p>
+      <button type="submit" class="btn btn-primario btn-bloco">Entrar</button>
+    </form>
+  </div>
+</section>
+
+<!-- ============ TELA 2 · CONSULTOR ============ -->
+<section id="telaConsultor" class="tela">
+  <p class="saudacao" id="saudacao"></p>
+
+  <form id="formVisita" class="cartao" novalidate>
+    <h2>Check-out da visita</h2>
+
+    <label for="cliente">Empresa visitada <span class="req">*</span></label>
+    <input type="text" id="cliente" name="cliente" placeholder="Ex.: CTIL Logística" required>
+
+    <label for="contato">Nome do contato</label>
+    <input type="text" id="contato" name="contato" placeholder="Quem te recebeu">
+
+    <label for="cidade">Cidade <span class="req">*</span></label>
+    <input type="text" id="cidade" name="cidade" list="cidades" placeholder="Ex.: Rio Grande" required>
+    <datalist id="cidades">
+      <option value="Pelotas"><option value="Rio Grande"><option value="Capão do Leão">
+      <option value="Canguçu"><option value="São Lourenço do Sul"><option value="Camaquã">
+      <option value="Arroio Grande"><option value="Jaguarão"><option value="Bagé">
+      <option value="Pedro Osório"><option value="Santa Vitória do Palmar">
+    </datalist>
+
+    <label for="datahora">Data e hora da visita <span class="req">*</span></label>
+    <input type="datetime-local" id="datahora" name="datahora" required>
+
+    <fieldset class="campo-status">
+      <legend>Status da visita <span class="req">*</span></legend>
+      <div class="radios">
+        <label class="chip chip-ok">
+          <input type="radio" name="status" value="Sucesso" required><span>Sucesso</span>
+        </label>
+        <label class="chip chip-and">
+          <input type="radio" name="status" value="Em negociação"><span>Em negociação</span>
+        </label>
+        <label class="chip chip-no">
+          <input type="radio" name="status" value="Perdido"><span>Perdido</span>
+        </label>
+      </div>
+    </fieldset>
+
+    <label for="resumo">Resumo da reunião</label>
+    <textarea id="resumo" name="resumo" rows="4"
+      placeholder="Tamanho da frota, quem decide, objeções, próximo passo…"></textarea>
+
+    <!-- GPS -->
+    <div class="gps">
+      <button type="button" id="btnGps" class="btn btn-secundario">Marcar localização</button>
+      <span id="gpsInfo" class="gps-info">Sem coordenadas</span>
+    </div>
+
+    <button type="submit" class="btn btn-primario btn-bloco">Registrar visita</button>
+    <p class="erro" id="erroVisita" hidden></p>
+  </form>
+
+  <section class="cartao" id="boxMinhas">
+    <h2>Minhas últimas visitas</h2>
+    <ul class="lista-recentes" id="listaRecentes"></ul>
+  </section>
+</section>
+
+<!-- ============ TELA 3 · GERENTE ============ -->
+<section id="telaGerente" class="tela">
+
+  <div class="painel-topo">
+    <div class="indicadores" id="indicadores"></div>
+    <div class="acoes">
+      <button id="btnAtualizar" class="btn btn-secundario">Atualizar</button>
+      <button id="btnPdf" class="btn btn-primario">Exportar relatório em PDF</button>
+    </div>
+  </div>
+
+  <div class="cartao filtros">
+    <div class="grid-filtros">
+      <div>
+        <label for="fConsultor">Consultor</label>
+        <select id="fConsultor"><option value="">Todos</option></select>
+      </div>
+      <div>
+        <label for="fCidade">Cidade</label>
+        <select id="fCidade"><option value="">Todas</option></select>
+      </div>
+      <div>
+        <label for="fStatus">Status</label>
+        <select id="fStatus">
+          <option value="">Todos</option>
+          <option>Sucesso</option><option>Em negociação</option><option>Perdido</option>
+        </select>
+      </div>
+      <div>
+        <label for="fBusca">Buscar cliente</label>
+        <input type="search" id="fBusca" placeholder="Nome da empresa">
+      </div>
+    </div>
+    <button id="btnLimpar" class="btn-texto">Limpar filtros</button>
+  </div>
+
+  <div class="cartao">
+    <div class="tabela-wrap">
+      <table id="tabela">
+        <thead>
+          <tr>
+            <th>Data</th><th>Consultor</th><th>Cliente</th>
+            <th>Cidade</th><th>Status</th><th>Resumo</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <p id="vazio" class="vazio" hidden>Nenhuma visita encontrada com esses filtros.</p>
+  </div>
+</section>
+
+</main>
+
+<script src="./app.js" defer></script>
+</body>
+</html>
