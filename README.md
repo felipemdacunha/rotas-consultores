@@ -3,6 +3,8 @@
 An installable mobile app for sales consultants to log field visits — **works offline** — plus a manager
 dashboard to review the team's visits and export them as PDF.
 
+**🔗 Live demo:** <https://felipemdacunha.github.io/rotas-consultores/> (runs in local mode: data stays in your browser)
+
 ## Features
 
 - **Three screens:** login, consultant and manager
