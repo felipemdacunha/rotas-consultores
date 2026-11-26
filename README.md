@@ -1,85 +1,79 @@
-# Visitas em Campo — PWA de visitas comerciais
+# Field Visits — sales visit tracking PWA
 
-App instalável no celular para consultores registrarem visitas em campo,
-com uso offline, e um painel para o gerente consultar e exportar em PDF.
+An installable mobile app for sales consultants to log field visits — **works offline** — plus a manager
+dashboard to review the team's visits and export them as PDF.
 
-## Arquivos
+## Features
 
-| Arquivo | O que faz |
+- **Three screens:** login, consultant and manager
+- **Offline-first:** visits are queued on the device and synced automatically when the connection comes back
+- **Installable PWA** with a Service Worker and web manifest
+- **Manager dashboard** with filters and PDF export
+- **Responsive layout** with light and dark themes
+- **Lightweight back-end** on Google Sheets via Apps Script (kept outside this repository)
+
+## Files
+
+| File | Purpose |
 |---|---|
-| `index.html` | As três telas: login, consultor e gerente |
-| `style.css` | Layout responsivo, tema claro e escuro |
-| `app.js` | Registro das visitas, fila offline, filtros e geração do PDF |
-| `sw.js` | Service Worker — faz o app abrir sem internet |
-| `manifest.json` | Deixa o app instalável na tela inicial |
-| `icon-192.png`, `icon-512.png` | Ícones do app |
-| `apps-script.gs` | Back-end no Google Sheets (não vai para o repositório) |
+| `index.html` | The three screens: login, consultant and manager |
+| `style.css` | Responsive layout, light and dark themes |
+| `app.js` | Visit logging, offline queue, filters and PDF generation |
+| `sw.js` | Service Worker — lets the app open without internet |
+| `manifest.json` | Makes the app installable on the home screen |
+| `icon-192.png`, `icon-512.png` | App icons |
 
-## Como testar agora, sem configurar nada
+## Try it without any setup
 
-Suba os arquivos e abra o link. Com `GOOGLE_SCRIPT_URL` vazia, o app roda
-em **modo local**: tudo é salvo no navegador e o painel do gerente lê dali.
-Serve para validar o fluxo antes de ligar a planilha.
+Publish the files and open the link. With `GOOGLE_SCRIPT_URL` empty, the app runs in **local mode**: everything is
+stored in the browser and the manager dashboard reads from there. It is useful to validate the flow before connecting
+the spreadsheet.
 
-A limitação é importante: em modo local, cada celular enxerga só as próprias
-visitas. Para o gerente ver o time inteiro, é preciso conectar a planilha.
+Note: in local mode each phone only sees its own visits. To let the manager see the whole team, connect the spreadsheet.
 
-## Passo 1 — Publicar no GitHub Pages
+## Step 1 — Publish on GitHub Pages
 
-1. Crie um repositório **público** (ex.: `rotas-consultores`).
-2. Envie estes arquivos para a raiz: `index.html`, `style.css`, `app.js`,
-   `manifest.json`, `sw.js`, `icon-192.png`, `icon-512.png`.
-   Não envie o `apps-script.gs` — ele vive dentro da planilha.
-3. **Settings > Pages > Branch**: escolha `main`, pasta `/ (root)`, **Save**.
-4. Em um ou dois minutos o link aparece: `https://SEU-USUARIO.github.io/rotas-consultores/`
+1. Push these files to the root of a **public** repository: `index.html`, `style.css`, `app.js`, `manifest.json`,
+   `sw.js`, `icon-192.png`, `icon-512.png`.
+2. **Settings › Pages › Branch:** choose `main`, folder `/ (root)`, **Save**.
+3. After a minute or two the link is available at `https://YOUR-USER.github.io/rotas-consultores/`.
 
-Os caminhos do código são todos relativos (`./`), então funciona em subpasta
-sem ajuste nenhum.
+All paths are relative (`./`), so it works from a subfolder with no changes.
 
-## Passo 2 — Conectar a planilha do Google
+## Step 2 — Connect the Google Sheet
 
-1. Crie uma planilha nova no Google Sheets.
-2. **Extensões > Apps Script**, apague o conteúdo e cole o `apps-script.gs`.
-3. **Implantar > Nova implantação > App da Web**:
-   - Executar como: **Eu**
-   - Quem pode acessar: **Qualquer pessoa**
-4. Autorize (o aviso "app não verificado" é esperado: o app é seu — clique em
-   *Avançado > Acessar projeto*).
-5. Copie a URL gerada (termina em `/exec`).
-6. No `app.js`, preencha a primeira linha de configuração:
+1. Create a new Google Sheet.
+2. **Extensions › Apps Script**, clear the editor and paste the Apps Script back-end.
+3. **Deploy › New deployment › Web app** — Execute as: **Me**; Who has access: **Anyone**.
+4. Authorize it (the "unverified app" warning is expected for your own script: *Advanced › Go to project*).
+5. Copy the generated URL (it ends with `/exec`) and set it in `app.js`:
 
    ```js
    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfy.../exec';
    ```
 
-7. Faça o commit. A aba `Visitas` nasce sozinha no primeiro envio.
+6. Commit. The `Visitas` sheet is created automatically on the first submission.
 
-## Passo 3 — Instalar no celular
+## Step 3 — Install on the phone
 
-- **Android/Chrome**: abra o link, menu ⋮ > *Instalar aplicativo*.
-- **iPhone/Safari**: abra o link, botão Compartilhar > *Adicionar à Tela de Início*.
+- **Android / Chrome:** open the link, menu ⋮ › *Install app*.
+- **iPhone / Safari:** open the link, Share › *Add to Home Screen*.
 
-## Como funciona o modo offline
+## How offline mode works
 
-O consultor preenche e toca em registrar. O app tenta enviar na hora; se não
-conseguir, a visita entra numa fila no `localStorage` e a barra no topo avisa
-quantas estão esperando. Assim que a internet volta — ou a cada 30 segundos,
-ou quando o app volta do segundo plano — a fila sobe sozinha. Nada se perde
-se o celular for fechado no meio: a fila fica gravada no aparelho.
+The consultant fills in the form and taps submit. The app tries to send it right away; if it can't, the visit goes into
+a queue in `localStorage` and a bar at the top shows how many are pending. As soon as the connection returns — or every
+30 seconds, or when the app comes back from the background — the queue is sent automatically. Nothing is lost if the
+app is closed midway: the queue stays on the device.
 
-O `id` de cada visita evita duplicata: se o mesmo registro for reenviado, o
-Apps Script identifica e ignora.
+Each visit has an `id`, so a resent record is recognized and ignored by the Apps Script (no duplicates).
 
-## Duas coisas que você precisa saber
+## Things to know
 
-**A URL do Apps Script é uma chave.** Publicada como "Qualquer pessoa", quem
-tiver o endereço consegue gravar e ler visitas. Como o `app.js` fica num
-repositório público, a URL fica visível para quem procurar. Para um protótipo
-com poucos consultores, tudo bem. Antes de virar ferramenta oficial, vale
-adicionar um token compartilhado no Apps Script, ou mover o back-end para um
-serviço com autenticação de verdade.
+**The Apps Script URL works like a key.** Deployed for "Anyone", whoever has the address can read and write visits.
+Since `app.js` lives in a public repository, the URL is visible. That is fine for a prototype with a few consultants;
+before using it as an official tool, add a shared token to the Apps Script or move the back-end to a service with real
+authentication.
 
-**O GPS precisa de HTTPS.** O GitHub Pages já serve em HTTPS, então funciona.
-Se você abrir o arquivo direto do disco (`file://`), o botão de localização e
-o Service Worker não funcionam — teste sempre pelo link publicado, ou por um
-servidor local (`python3 -m http.server`).
+**GPS requires HTTPS.** GitHub Pages already serves over HTTPS. Opening the file straight from disk (`file://`) disables
+geolocation and the Service Worker — test through the published link or a local server (`python3 -m http.server`).
